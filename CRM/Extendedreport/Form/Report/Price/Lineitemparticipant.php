@@ -20,6 +20,19 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
    */
   public function __construct() {
     $this->_columns = $this->getColumns('Contact') +
+    array(
+      'civicrm_phone' => array(
+        'dao' => 'CRM_Core_DAO_Phone',
+        'fields' => array(
+          'phone' => array(
+            'title' => ts('Phone'),
+            'no_repeat' => TRUE,
+          ),
+        ),
+        'grouping' => 'contact-fields',
+      ),
+    ) +
+    $this->getColumns('Email') +
     $this->getColumns('Event') +
     $this->getColumns('Participant') +
     $this->getColumns('Contribution') +
@@ -51,6 +64,21 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
       'contribution_from_participant',
       'contact_from_participant',
       'event_from_participant',
+      'email_from_contact',
     );
   }
+
+  /**
+   * Generate report FROM clause.
+   */
+  public function from() {
+    if ($this->isTableSelected('civicrm_phone')) {
+      $this->_extraFrom .= "
+        LEFT JOIN civicrm_phone {$this->_aliases['civicrm_phone']}
+           ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_phone']}.contact_id AND
+              {$this->_aliases['civicrm_phone']}.is_primary = 1 ";
+    }
+    parent::from();
+  }
+
 }
