@@ -6,12 +6,14 @@
 class CRM_Extendedreport_Form_Report_ActivityPivot extends CRM_Extendedreport_Form_Report_ExtendedReport {
   protected $_baseTable = 'civicrm_activity';
   protected $skipACL = FALSE;
+  protected $isPivot = TRUE;
   protected $_customGroupAggregates = TRUE;
   protected $_aggregatesIncludeNULL = TRUE;
   protected $_aggregatesAddTotal = TRUE;
   protected $_rollup = 'WITH ROLLUP';
   public $_drilldownReport = array();
   protected $_potentialCriteria = array();
+  protected $_noFields = TRUE;
 
   /**
    * Class constructor.

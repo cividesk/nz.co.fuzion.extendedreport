@@ -129,6 +129,7 @@ class CRM_Extendedreport_Form_Report_Pledge_Sybuns extends CRM_Extendedreport_Fo
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
             'options' => CRM_Contribute_PseudoConstant::contributionStatus(),
             'default' => array('1'),
+            'type' => CRM_Utils_Type::T_INT,
           ),
         ),
       ),
@@ -141,6 +142,7 @@ class CRM_Extendedreport_Form_Report_Pledge_Sybuns extends CRM_Extendedreport_Fo
             'title' => ts('Group'),
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
             'group' => TRUE,
+            'type' => CRM_Utils_Type::T_INT,
             'options' => CRM_Core_PseudoConstant::group()
           )
         )
@@ -327,7 +329,7 @@ class CRM_Extendedreport_Form_Report_Pledge_Sybuns extends CRM_Extendedreport_Fo
     $this->buildACLClause($this->_aliases['civicrm_contact']);
     $this->select();
     $this->from();
-    $this->customDataFrom();
+    $this->extendedCustomDataFrom();
     $this->where();
     $this->groupBy();
 
@@ -357,7 +359,7 @@ class CRM_Extendedreport_Form_Report_Pledge_Sybuns extends CRM_Extendedreport_Fo
       $upTo_year = $current_year - 4;
 
       $rows = $row = array();
-      $this->addDeveloperTab($sql);
+      $this->addToDeveloperTab($sql);
       $dao = CRM_Core_DAO::executeQuery($sql);
       $contributionSum = 0;
       while ($dao->fetch()) {

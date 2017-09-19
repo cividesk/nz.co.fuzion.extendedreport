@@ -2,9 +2,9 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.5                                                |
+ | CiviCRM version 4.7                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2014                                |
+ | Copyright CiviCRM LLC (c) 2004-2017                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -30,106 +30,41 @@
  *
  * @package CRM
  * @copyright CiviCRM LLC (c) 2004-2014
- * $Id$
  */
 class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_Extendedreport_Form_Report_ExtendedReport {
+  protected $_baseTable = 'civicrm_contribution';
+  protected $_rollup = '';
   /**
    * Class constructor.
    */
   public function __construct() {
     $this->_columns = $this->getColumns('Contact')
     + $this->getColumns('Address')
-    + $this->getColumns('Phone', array('subquery' => FALSE,))
+    + $this->getColumns('Phone', array('subquery' => FALSE))
     + $this->getColumns('Email')
     + $this->getColumns('Membership')
-    + $this->getColumns('FinancialAccount')
+    + $this->getColumns('MembershipLog', array('prefix_label' => 'Historical '))
+    + $this->getColumns('FinancialAccount', array(
+        'prefix' => 'credit_',
+        'group_by' => TRUE,
+        'prefix_label' => ts('Credit '),
+        'filters' => TRUE,
+      ))
+    + $this->getColumns('FinancialAccount', array(
+      'prefix' => 'debit_',
+      'group_by' => TRUE,
+      'prefix_label' => ts('Debit '),
+      'filters' => FALSE,
+    ))
     + $this->getColumns('LineItem')
+    + $this->getColumns('Contribution', array(
+      'fields_defaults' => array('receive_date'),
+      'filters_defaults' => array('contribution_status_id' => array(1),
+     )))
+    +  $this->getColumns('FinancialTrxn', array(
+      'filters_defaults' => array('status_id' => array('IN' => array(1)),
+    )))
     + array(
-      'civicrm_contribution' => array(
-        'dao' => 'CRM_Contribute_DAO_Contribution',
-        'fields' => array(
-          'receive_date' => array(
-            'default' => TRUE
-          ),
-          'invoice_id' => array(
-            'title' => ts('Invoice ID'),
-            'default' => TRUE,
-          ),
-          'contribution_status_id' => array(
-            'title' => ts('Contribution Status'),
-            'default' => TRUE,
-          ),
-          'id' => array(
-            'title' => ts('Contribution #'),
-            'default' => TRUE,
-          ),
-        ),
-        'filters' => array(
-          'receive_date' => array('operatorType' => CRM_Report_Form::OP_DATE),
-          'contribution_status_id' => array(
-            'title' => ts('Contribution Status'),
-            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Contribute_PseudoConstant::contributionStatus(),
-            'default' => array(1),
-          ),
-        ),
-        'order_bys' => array(
-          'contribution_id' => array('title' => ts('Contribution #')),
-          'contribution_status_id' => array('title' => ts('Contribution Status')),
-        ),
-        'grouping' => 'contri-fields',
-      ),)
-    + array(
-      'civicrm_financial_trxn' => array(
-        'dao' => 'CRM_Financial_DAO_FinancialTrxn',
-        'fields' => array(
-          'check_number' => array(
-            'title' => ts('Cheque #'),
-            'default' => TRUE,
-          ),
-          'payment_instrument_id' => array(
-            'title' => ts('Payment Instrument'),
-            'default' => TRUE,
-            'alter_display' => 'alterPaymentType',
-          ),
-          'currency' => array(
-            'required' => TRUE,
-            'no_display' => TRUE,
-          ),
-          'trxn_date' => array(
-            'title' => ts('Transaction Date'),
-            'default' => TRUE,
-            'type' => CRM_Utils_Type::T_DATE,
-          ),
-          'trxn_id' => array(
-            'title' => ts('Trans #'),
-            'default' => TRUE,
-          ),
-        ),
-        'filters' => array(
-          'payment_instrument_id' => array(
-            'title' => ts('Payment Instrument'),
-            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Contribute_PseudoConstant::paymentInstrument(),
-          ),
-          'currency' => array(
-            'title' => 'Currency',
-            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Core_OptionGroup::values('currencies_enabled'),
-            'default' => NULL,
-            'type' => CRM_Utils_Type::T_STRING,
-          ),
-          'trxn_date' => array(
-            'title' => ts('Transaction Date'),
-            'operatorType' => CRM_Report_Form::OP_DATE,
-            'type' => CRM_Utils_Type::T_DATE,
-          ),
-        ),
-        'order_bys' => array(
-          'payment_instrument_id' => array('title' => ts('Payment Instrument')),
-        ),
-      ),
-    ) + array(
       'civicrm_entity_financial_trxn' => array(
         'dao' => 'CRM_Financial_DAO_EntityFinancialTrxn',
         'fields' => array(
@@ -137,161 +72,132 @@ class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_
             'title' => ts('Amount'),
             'default' => TRUE,
             'type' => CRM_Utils_Type::T_STRING,
+            'statistics' => array('sum'),
           ),
         ),
         'filters' => array(
-          'amount' => array('title' => ts('Amount')),
+          'amount' => array(
+            'title' => ts('Amount'),
+            'type' => CRM_Utils_Type::T_MONEY,
+          ),
         ),
       ),
-    );
+    ) + $this->getColumns('Batch', array(
+      'group_by' => TRUE,
+      'prefix_label' => ts('Batch '),
+      'filters' => TRUE,
+    ));
 
     $this->_groupFilter = TRUE;
     $this->_tagFilter = TRUE;
     parent::__construct();
+
   }
 
-  function getFinancialAccountColumns() {
-    return array(
-      'civicrm_financial_account' => array(
-        'dao' => 'CRM_Financial_DAO_FinancialAccount',
-        'fields' => array(
-          'debit_accounting_code' => array(
-            'title' => ts('Financial Account Code - Debit'),
-            'name' => 'accounting_code',
-            'alias' => 'financial_account_civireport_debit',
-            'default' => TRUE,
-          ),
-          'credit_accounting_code' => array(
-            'title' => ts('Financial Account Code - Credit'),
-            'name' => 'accounting_code',
-            'alias' => 'financial_account_civireport_credit',
-            'default' => TRUE,
-          ),
-          'debit_name' => array(
-            'title' => ts('Financial Account Name - Debit'),
-            'name' => 'name',
-            'alias' => 'financial_account_civireport_debit',
-            'default' => TRUE,
-          ),
-          'credit_name' => array(
-            'title' => ts('Financial Account Name - Credit'),
-            'name' => 'name',
-            'alias' => 'financial_account_civireport_credit',
-            'default' => TRUE,
-          ),
-        ),
-        'filters' => array(
-          'debit_accounting_code' => array(
-            'title' => ts('Financial Account Code - Debit'),
-            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Contribute_PseudoConstant::financialAccount(NULL, NULL, 'accounting_code', 'accounting_code'),
-            'name' => 'accounting_code',
-            'alias' => 'financial_account_civireport_debit',
-          ),
-          'credit_accounting_code' => array(
-            'title' => ts('Financial Account Code - Credit'),
-            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Contribute_PseudoConstant::financialAccount(NULL, NULL, 'accounting_code', 'accounting_code'),
-          ),
-          'debit_name' => array(
-            'title' => ts('Financial Account Name - Debit'),
-            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Contribute_PseudoConstant::financialAccount(),
-            'name' => 'id',
-            'alias' => 'financial_account_civireport_debit',
-          ),
-          'credit_name' => array(
-            'title' => ts('Financial Account Name - Credit'),
-            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options' => CRM_Contribute_PseudoConstant::financialAccount(),
-          ),
-        ),
-      )
-    );
-  }
-
-  function select() {
-    $select = array();
-
-    $this->_columnHeaders = array();
-    foreach ($this->_columns as $tableName => $table) {
-      if (array_key_exists('fields', $table)) {
-        foreach ($table['fields'] as $fieldName => $field) {
-          if (!empty($field['required']) ||
-            !empty($this->_params['fields'][$fieldName])
-          ) {
-            switch ($fieldName) {
-              case 'credit_accounting_code' :
-                $select[] = " CASE
-                            WHEN {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id IS NOT NULL
-                            THEN  {$this->_aliases['civicrm_financial_account']}_credit_1.accounting_code
-                            ELSE  {$this->_aliases['civicrm_financial_account']}_credit_2.accounting_code
-                            END AS civicrm_financial_account_credit_accounting_code ";
-                break;
-              case 'amount' :
-                $select[] = " CASE
-                            WHEN  {$this->_aliases['civicrm_entity_financial_trxn']}_item.entity_id IS NOT NULL
-                            THEN {$this->_aliases['civicrm_entity_financial_trxn']}_item.amount
-                            ELSE {$this->_aliases['civicrm_entity_financial_trxn']}.amount
-                            END AS civicrm_entity_financial_trxn_amount ";
-                break;
-              case 'credit_name' :
-                $select[] = " CASE
-                            WHEN {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id IS NOT NULL
-                            THEN  {$this->_aliases['civicrm_financial_account']}_credit_1.name
-                            ELSE  {$this->_aliases['civicrm_financial_account']}_credit_2.name
-                            END AS civicrm_financial_account_credit_name ";
-                break;
-              default :
-                $select[] = "{$field['dbAlias']} as {$tableName}_{$fieldName}";
-                break;
-            }
-            $this->_columnHeaders["{$tableName}_{$fieldName}"]['title'] = $field['title'];
-            $this->_columnHeaders["{$tableName}_{$fieldName}"]['type'] = CRM_Utils_Array::value('type', $field);
-          }
-        }
-      }
+  /**
+   * Here we can define select clauses for any particular row.
+   *
+   * @param string $tableName
+   * @param string $tableKey
+   * @param string $fieldName
+   * @param array $field
+   *
+   * @return bool|string
+   */
+  function selectClause(&$tableName, $tableKey, &$fieldName, &$field) {
+    $alias = "{$tableName}_{$fieldName}";
+    if ($fieldName == 'credit_financial_account_accounting_code') {
+      $this->setHeaders($tableName, $fieldName, $field, $alias);
+      return "
+        CASE
+        WHEN {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id IS NOT NULL
+        THEN {$this->_aliases['credit_civicrm_financial_account']}.accounting_code
+        ELSE credit_financial_item_financial_account.accounting_code
+        END AS $alias ";
     }
 
-    $this->_select = 'SELECT ' . implode(', ', $select) . ' ';
+    if ($fieldName == 'credit_financial_account_name') {
+      $this->setHeaders($tableName, $fieldName, $field, $alias);
+      return "
+        CASE
+        WHEN {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id IS NOT NULL
+        THEN {$this->_aliases['credit_civicrm_financial_account']}.name
+        ELSE credit_financial_item_financial_account.name
+        END AS $alias ";
+    }
+
+    if ($fieldName == 'debit_financial_account_accounting_code') {
+      $this->setHeaders($tableName, $fieldName, $field, $alias);
+      return "
+        CASE
+        WHEN {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id IS NOT NULL
+        THEN  {$this->_aliases['debit_civicrm_financial_account']}.accounting_code
+        ELSE  {$this->_aliases['debit_civicrm_financial_account']}.accounting_code
+        END AS $alias ";
+    }
+
+
+    if ($fieldName == 'debit_financial_account_name') {
+      $this->setHeaders($tableName, $fieldName, $field, $alias);
+      return "
+        CASE
+        WHEN {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id IS NOT NULL
+        THEN  {$this->_aliases['debit_civicrm_financial_account']}.name
+        ELSE  {$this->_aliases['debit_civicrm_financial_account']}.name
+        END AS $alias ";
+    }
+
+    if ($fieldName == 'amount') {
+      $field['dbAlias'] =
+      $this->setHeaders($tableName, $fieldName, $field, $alias);
+      $clause = "(
+        CASE
+        WHEN  {$this->_aliases['civicrm_entity_financial_trxn']}_item.entity_id IS NOT NULL
+        THEN {$this->_aliases['civicrm_entity_financial_trxn']}_item.amount
+        ELSE {$this->_aliases['civicrm_entity_financial_trxn']}.amount
+        END) AS civicrm_entity_financial_trxn_amount ";
+      if (!empty($this->_groupByArray) || $this->isForceGroupBy) {
+        return " SUM{$clause}";
+      }
+      return $clause;
+    }
+
+    return parent::selectClause($tableName, $tableKey, $fieldName, $field);
   }
 
   function from() {
-    $this->_from = NULL;
+    parent::from();
+    // @todo break these out to be like the other ones.
+    $this->_from .=
+    "
+              LEFT JOIN civicrm_financial_account {$this->_aliases['debit_civicrm_financial_account']}
+                    ON {$this->_aliases['civicrm_financial_trxn']}.to_financial_account_id =
+                    {$this->_aliases['debit_civicrm_financial_account']}.id
+                    
+              LEFT JOIN civicrm_financial_account {$this->_aliases['credit_civicrm_financial_account']}
+                    ON {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id = {$this->_aliases['credit_civicrm_financial_account']}.id";
+    if ($this->isTableSelected('civicrm_membership_log')) {
+      $this->_from .= "
+      LEFT JOIN civicrm_membership_log {$this->_aliases['civicrm_membership_log']}
+      ON {$this->_aliases['civicrm_membership']}.id = {$this->_aliases['civicrm_membership_log']}.membership_id
+      ";
+    }
+  }
 
-    $this->_from = "FROM  civicrm_contact {$this->_aliases['civicrm_contact']} {$this->_aclFrom}
-              INNER JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']}
-                    ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_contribution']}.contact_id AND
-                         {$this->_aliases['civicrm_contribution']}.is_test = 0
-              LEFT JOIN civicrm_membership_payment payment
-                    ON ( {$this->_aliases['civicrm_contribution']}.id = payment.contribution_id )
-              LEFT JOIN civicrm_membership {$this->_aliases['civicrm_membership']}
-                    ON payment.membership_id = {$this->_aliases['civicrm_membership']}.id
-              LEFT JOIN civicrm_entity_financial_trxn {$this->_aliases['civicrm_entity_financial_trxn']}
-                    ON ({$this->_aliases['civicrm_contribution']}.id = {$this->_aliases['civicrm_entity_financial_trxn']}.entity_id AND
-                        {$this->_aliases['civicrm_entity_financial_trxn']}.entity_table = 'civicrm_contribution')
-              LEFT JOIN civicrm_financial_trxn {$this->_aliases['civicrm_financial_trxn']}
-                    ON {$this->_aliases['civicrm_financial_trxn']}.id = {$this->_aliases['civicrm_entity_financial_trxn']}.financial_trxn_id
-              LEFT JOIN civicrm_financial_account {$this->_aliases['civicrm_financial_account']}_debit
-                    ON {$this->_aliases['civicrm_financial_trxn']}.to_financial_account_id = {$this->_aliases['civicrm_financial_account']}_debit.id
-              LEFT JOIN civicrm_financial_account {$this->_aliases['civicrm_financial_account']}_credit_1
-                    ON {$this->_aliases['civicrm_financial_trxn']}.from_financial_account_id = {$this->_aliases['civicrm_financial_account']}_credit_1.id
-              LEFT JOIN civicrm_entity_financial_trxn {$this->_aliases['civicrm_entity_financial_trxn']}_item
-                    ON ({$this->_aliases['civicrm_financial_trxn']}.id = {$this->_aliases['civicrm_entity_financial_trxn']}_item.financial_trxn_id AND
-                        {$this->_aliases['civicrm_entity_financial_trxn']}_item.entity_table = 'civicrm_financial_item')
-              LEFT JOIN civicrm_financial_item fitem
-                    ON fitem.id = {$this->_aliases['civicrm_entity_financial_trxn']}_item.entity_id
-              LEFT JOIN civicrm_financial_account {$this->_aliases['civicrm_financial_account']}_credit_2
-                    ON fitem.financial_account_id = {$this->_aliases['civicrm_financial_account']}_credit_2.id
-              LEFT JOIN civicrm_line_item {$this->_aliases['civicrm_line_item']}
-                    ON  fitem.entity_id = {$this->_aliases['civicrm_line_item']}.id AND fitem.entity_table = 'civicrm_line_item'
-
-              LEFT JOIN civicrm_address {$this->_aliases['civicrm_address']} ON {$this->_aliases['civicrm_address']}.contact_id = {$this->_aliases['civicrm_contact']}.id AND {$this->_aliases['civicrm_address']}.is_primary = 1
-              LEFT JOIN civicrm_phone {$this->_aliases['civicrm_phone']} ON {$this->_aliases['civicrm_phone']}.contact_id = {$this->_aliases['civicrm_contact']}.id AND {$this->_aliases['civicrm_phone']}.is_primary = 1
-              LEFT JOIN civicrm_email {$this->_aliases['civicrm_email']} ON {$this->_aliases['civicrm_email']}.contact_id = {$this->_aliases['civicrm_contact']}.id AND {$this->_aliases['civicrm_email']}.is_primary = 1
-                AND {$this->_aliases['civicrm_email']}.on_hold = 0
-
-                    ";
+  /**
+   * @return array
+   */
+  function fromClauses() {
+    return array(
+      'contact_from_contribution',
+      'financial_trxn_from_contribution',
+      'lineItem_from_financialTrxn',
+      'batch_from_financialTrxn',
+      'primary_phone_from_contact',
+      'address_from_contact',
+      'email_from_contact',
+      'membership_from_lineItem',
+    );
   }
 
   function orderBy() {
@@ -308,55 +214,43 @@ class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_
     }
   }
 
-  function where() {
-    foreach ($this->_columns as $tableName => $table) {
-      if (array_key_exists('filters', $table)) {
-        foreach ($table['filters'] as $fieldName => $field) {
-          $clause = NULL;
-          if ($fieldName == 'credit_accounting_code') {
-            $field['dbAlias'] = "CASE
-              WHEN financial_trxn_civireport.from_financial_account_id IS NOT NULL
-              THEN  financial_account_civireport_credit_1.accounting_code
-              ELSE  financial_account_civireport_credit_2.accounting_code
-              END";
-          }
-          else if ($fieldName == 'credit_name') {
-            $field['dbAlias'] = "CASE
-              WHEN financial_trxn_civireport.from_financial_account_id IS NOT NULL
-              THEN  financial_account_civireport_credit_1.id
-              ELSE  financial_account_civireport_credit_2.id
-              END";
-          }
-          if (CRM_Utils_Array::value('type', $field) & CRM_Utils_Type::T_DATE) {
-            $relative = CRM_Utils_Array::value("{$fieldName}_relative", $this->_params);
-            $from = CRM_Utils_Array::value("{$fieldName}_from", $this->_params);
-            $to = CRM_Utils_Array::value("{$fieldName}_to", $this->_params);
+  public function where() {
+    parent::where();
+    if ($this->isTableSelected('civicrm_membership_log')) {
+      $this->_where .= "AND {$this->_aliases['civicrm_membership_log']}.modified_date = DATE({$this->_aliases['civicrm_financial_trxn']}.trxn_date)";
+    }
+  }
 
-            $clause = $this->dateClause($field['name'], $relative, $from, $to, $field['type']);
-          }
-          else {
-            $op = CRM_Utils_Array::value("{$fieldName}_op", $this->_params);
-            if ($op) {
-              $clause = $this->whereClause($field,
-                $op,
-                CRM_Utils_Array::value("{$fieldName}_value", $this->_params),
-                CRM_Utils_Array::value("{$fieldName}_min", $this->_params),
-                CRM_Utils_Array::value("{$fieldName}_max", $this->_params)
-              );
-            }
-          }
-          if (!empty($clause)) {
-            $clauses[] = $clause;
-          }
-        }
-      }
+  /**
+   * Generate where clause.
+   *
+   * This can be overridden in reports for special treatment of a field
+   *
+   * @param array $field Field specifications
+   * @param string $op Query operator (not an exact match to sql)
+   * @param mixed $value
+   * @param float $min
+   * @param float $max
+   *
+   * @return null|string
+   */
+  public function whereClause(&$field, $op, $value, $min, $max) {
+    if ($field['dbAlias'] == "{$this->_aliases['credit_civicrm_financial_account']}.accounting_code") {
+      $field['dbAlias'] = "CASE
+              WHEN financial_trxn_civireport.from_financial_account_id IS NOT NULL
+              THEN  {$this->_aliases['credit_civicrm_financial_account']}.accounting_code
+              ELSE  credit_financial_item_financial_account.accounting_code
+              END";
     }
-    if (empty($clauses)) {
-      $this->_where = 'WHERE ( 1 )';
+    if ($field['dbAlias'] == 'credit_financial_account.name') {
+      $field['dbAlias'] =  "CASE
+              WHEN financial_trxn_civireport.from_financial_account_id IS NOT NULL
+              THEN {$this->_aliases['credit_civicrm_financial_account']}.id
+              ELSE  credit_financial_item_financial_account.id
+              END";
+
     }
-    else {
-      $this->_where = 'WHERE ' . implode(' AND ', $clauses);
-    }
+    return parent::whereClause($field, $op, $value, $min, $max);
   }
 
   /**
@@ -432,10 +326,36 @@ class CRM_Extendedreport_Form_Report_Contribute_BookkeepingExtended extends CRM_
         $rows[$rowNum]['civicrm_line_item_financial_type_id'] = $contributionTypes[$value];
       }
       if ($value = CRM_Utils_Array::value('civicrm_entity_financial_trxn_amount', $row)) {
-        $rows[$rowNum]['civicrm_entity_financial_trxn_amount'] = CRM_Utils_Money::format($rows[$rowNum]['civicrm_entity_financial_trxn_amount'], $rows[$rowNum]['civicrm_financial_trxn_currency']);
+        $rows[$rowNum]['civicrm_entity_financial_trxn_amount'] = CRM_Utils_Money::format($rows[$rowNum]['civicrm_entity_financial_trxn_amount'], $rows[$rowNum]['civicrm_financial_trxn_financial_trxn_currency']);
       }
     }
     parent::alterDisplay($rows);
   }
+
+  /**
+   * @param $tableName
+   * @param $fieldName
+   * @param $field
+   * @param $alias
+   */
+  protected function setHeaders(&$tableName, &$fieldName, &$field, $alias) {
+    $this->_columnHeaders["{$tableName}_{$fieldName}"]['title'] = CRM_Utils_Array::value('title', $field);
+    $this->_columnHeaders["{$tableName}_{$fieldName}"]['type'] = CRM_Utils_Array::value('type', $field);
+    $this->_columnHeaders["{$tableName}_{$fieldName}"]['dbAlias'] = CRM_Utils_Array::value('dbAlias', $field);
+    $this->_selectAliases[] = $alias;
+  }
+
+  public function groupBy() {
+    parent::storeGroupByArray();
+    if (empty($this->_groupByArray)) {
+      $this->_groupByArray = array(
+        "{$this->_aliases['civicrm_entity_financial_trxn']}.id",
+        "{$this->_aliases['civicrm_line_item']}.id",
+      );
+      $this->_rollup = FALSE;
+    }
+    parent::groupBy();
+  }
+
 }
 

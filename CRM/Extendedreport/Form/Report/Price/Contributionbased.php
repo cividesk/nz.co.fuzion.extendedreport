@@ -13,10 +13,11 @@ class CRM_Extendedreport_Form_Report_Price_Contributionbased extends CRM_Extende
   public function __construct() {
     $this->_columns
       = $this->getColumns('Contact')
-      + $this->getColumns('Contribution')
+      + $this->getColumns('Contribution', array('filters_defaults' => array('is_test' => 0)))
       + $this->getColumns('PriceField')
       + $this->getColumns('PriceFieldValue')
-      + $this->getColumns('LineItem');
+      + $this->getColumns('LineItem')
+      + $this->getColumns('Address');
     parent::__construct();
   }
 
@@ -28,7 +29,8 @@ class CRM_Extendedreport_Form_Report_Price_Contributionbased extends CRM_Extende
       'lineItem_from_contribution',
       'contact_from_contribution',
       'priceFieldValue_from_lineItem',
-      'priceField_from_lineItem'
+      'priceField_from_lineItem',
+      'address_from_contact',
     );
   }
 }

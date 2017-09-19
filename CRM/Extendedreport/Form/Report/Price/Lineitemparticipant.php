@@ -14,11 +14,15 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
   protected $_baseTable = 'civicrm_line_item';
 
   protected $_aclTable = 'civicrm_contact';
+  protected $_participantTable = 'civicrm_participant';
 
   /**
    * Class constructor.
    */
   public function __construct() {
+    $this->_autoIncludeIndexedFieldsAsOrderBys = 1;
+    $this->_customGroupGroupBy = 1;
+
     $this->_columns = $this->getColumns('Contact') +
     array(
       'civicrm_phone' => array(
@@ -38,7 +42,8 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
     $this->getColumns('Contribution') +
     $this->getColumns('PriceField') +
     $this->getColumns('PriceFieldValue') +
-    $this->getColumns('LineItem');
+    $this->getColumns('LineItem') +
+    $this->getColumns('Address');
     parent::__construct();
   }
 
@@ -65,6 +70,7 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
       'contact_from_participant',
       'event_from_participant',
       'email_from_contact',
+      'address_from_contact',
     );
   }
 
