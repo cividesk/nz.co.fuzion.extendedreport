@@ -90,7 +90,6 @@ class CRM_Extendedreport_Form_Report_RelationshipExtended extends CRM_Extendedre
           ON ( {$this->_aliases['civicrm_relationship']}.contact_id_b =
           {$this->_aliases['contact_b_civicrm_contact']}.id )
 
-          {$this->_aclFrom}
           LEFT JOIN civicrm_relationship rc ON ({$this->_aliases['contact_b_civicrm_contact']}.id = rc.contact_id_a AND rc.relationship_type_id = 15)
           LEFT JOIN civicrm_relationship rccoordinator ON ({$this->_aliases['contact_b_civicrm_contact']}.id = rccoordinator.contact_id_a AND rccoordinator.relationship_type_id = 8)
           LEFT JOIN civicrm_case case_civireport ON rccoordinator .case_id = case_civireport.id";
