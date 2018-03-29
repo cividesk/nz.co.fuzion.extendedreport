@@ -72,7 +72,6 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
       'event_from_participant',
       'email_from_contact',
       'address_from_contact',
-      'email_from_contact',
     );
   }
 
