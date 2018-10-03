@@ -44,6 +44,7 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
     $this->getColumns('PriceFieldValue') +
     $this->getColumns('LineItem') +
     $this->getColumns('Address') +
+    $this->getColumns('Membership') +
     $this->getColumns('Email');
     parent::__construct();
   }
@@ -72,6 +73,7 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
       'event_from_participant',
       'email_from_contact',
       'address_from_contact',
+      'membership_from_contact',
     );
   }
 
