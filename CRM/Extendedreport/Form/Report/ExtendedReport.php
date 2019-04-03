@@ -3891,10 +3891,16 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'title' => 'Participant ID',
         'is_fields' => TRUE,
       ),
-      'participant_record' => array(
-        'name' => 'id',
-        'title' => 'Participant ID',
+      'participant_registered_by_id' => array(
+        'title' => 'Registered by ID',
         'is_fields' => TRUE,
+        'name' => 'registered_by_id',
+      ),
+      'participant_registered_by_name' => array(
+        'title' => 'Registered by Name',
+        'is_fields' => TRUE,
+        'name' => 'registered_by_id',
+        'alter_display' => 'alterRegisteredName',
       ),
       'participant_event_id' => array(
         'title' => ts('Event ID'),
@@ -6822,6 +6828,26 @@ ON {$this->_aliases['civicrm_membership']}.contact_id = {$this->_aliases['civicr
       return '';
     }
     return CRM_Event_PseudoConstant::eventType($value);
+  }
+
+  /**
+   * @param int|null $value
+   * @param array $row
+   * @param string $selectedfield
+   *
+   * @return string
+   *   Name of primary participant.
+   */
+  function alterRegisteredName($value, &$row, $selectedField) {
+    if (empty($value)) {
+      return '';
+    }
+
+    $registeredByContactId = CRM_Core_DAO::getFieldValue('CRM_Event_DAO_Participant', $value, 'contact_id', 'id');
+    $row[$selectedField . '_link'] = CRM_Utils_System::url('civicrm/contact/view', 'reset=1&cid=' . $registeredByContactId);
+    $row[$selectedField . '_hover']  = ts('View Contact Summary for Contact that registered the participant.');
+
+    return CRM_Contact_BAO_Contact::displayName($registeredByContactId);
   }
 
   /**
