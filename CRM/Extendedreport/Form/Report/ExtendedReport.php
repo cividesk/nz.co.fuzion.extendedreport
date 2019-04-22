@@ -5575,7 +5575,7 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
       return '';
     }
 
-    return str_replace('^A', ' ', $value);
+    return str_replace(CRM_Core_DAO::VALUE_SEPARATOR, ' ', $value);
   }
 
   /**
