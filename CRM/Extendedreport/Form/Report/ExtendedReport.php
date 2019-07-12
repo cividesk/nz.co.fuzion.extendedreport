@@ -4626,6 +4626,7 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
         'operatorType' => CRM_Report_Form::OP_MULTISELECT,
         'options' => $this->_getOptions('Contribution', 'contribution_page_id'),
         'type' => CRM_Utils_Type::T_INT,
+        'alter_display' => 'alterContributionPage',
       ),
       'currency' => array(
         'is_fields' => TRUE,
@@ -6837,6 +6838,16 @@ ON {$this->_aliases['civicrm_membership']}.contact_id = {$this->_aliases['civicr
   function alterCampaign($value, &$row) {
     $campaigns = CRM_Campaign_BAO_Campaign::getCampaigns();
     return CRM_Utils_Array::value($value, $campaigns);
+  }
+
+  /**
+   * @param $value
+   *
+   * @return mixed
+   */
+  function alterContributionPage($value) {
+    $title = CRM_Contribute_PseudoConstant::contributionPage($value);
+    return $title;
   }
 
   /**
