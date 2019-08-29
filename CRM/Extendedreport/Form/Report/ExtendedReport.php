@@ -7623,6 +7623,14 @@ ON {$this->_aliases['civicrm_membership']}.contact_id = {$this->_aliases['civicr
         $fieldName);
     }
 
+    if ($fieldName == 'membership_owner_membership_id') {
+      $operations = array(
+        '' => 'Both',
+        'nll' => ts('Primary'),
+        'nnll' => ts('Inherited'),
+      );
+    }
+
     $filters[$table][$fieldName] = $field;
 
     switch (CRM_Utils_Array::value('operatorType', $field)) {
