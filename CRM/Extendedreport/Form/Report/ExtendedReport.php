@@ -1786,7 +1786,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
     if (array_key_exists('contribution_total_amount_year', $columnFields) || array_key_exists('contribution_total_amount_month', $columnFields)) {
       $columnType = explode('_', $this->_params['aggregate_column_headers']);
       $columnType = end($columnType);
-      $result = self::buildContributionTotalAmountBybreakdown('NULL', $columnType, key($columnFields));
+      $result = self::buildContributionTotalAmountBybreakdown($this->_params['contribution_contribution_page_id_op'], $columnType, key($columnFields));
 
       $header = array_keys($result);
 
@@ -1993,6 +1993,9 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
         }
         elseif(empty($rowFieldId)) {
           $where = "Where " . $tableAlias . "." . $rowFieldKey . " IS NULL";
+        }
+        elseif($rowFieldId =='nnll') {
+          $where = "Where " . $tableAlias . "." . $rowFieldKey . " IS NOT NULL";
         }
       }
       if (!empty($clause)) {
