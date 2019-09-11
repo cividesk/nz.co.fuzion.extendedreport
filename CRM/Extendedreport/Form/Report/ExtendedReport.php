@@ -1786,7 +1786,7 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
     if (array_key_exists('contribution_total_amount_year', $columnFields) || array_key_exists('contribution_total_amount_month', $columnFields)) {
       $columnType = explode('_', $this->_params['aggregate_column_headers']);
       $columnType = end($columnType);
-      $result = self::buildContributionTotalAmountBybreakdown($this->_params['contribution_contribution_page_id_op'], $columnType, key($columnFields));
+      $result = self::buildContributionTotalAmountBybreakdown('NULL', $columnType, key($columnFields));
 
       $header = array_keys($result);
 
@@ -1918,6 +1918,17 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
 
           // Add total.
           $this->_statFields = array_keys($new);
+          if (!empty($new)) {
+            $firstHeaderKey = array_keys($this->_columnHeaders)[0];
+            $lastHeaderKey = key(array_slice($this->_columnHeaders, -1, 1, true));
+            $columnHeaders[$firstHeaderKey] = $this->_columnHeaders[$firstHeaderKey];
+            unset($new[$lastHeaderKey]);
+            foreach ($new as $hName => $value) {
+              $columnHeaders[$hName] = $this->_columnHeaders[$hName];
+            }
+            $columnHeaders[$lastHeaderKey] = $this->_columnHeaders[$lastHeaderKey];
+            $this->_columnHeaders = $columnHeaders;
+          }
         }
         // format result set.
         $this->formatDisplay($rows, FALSE);
