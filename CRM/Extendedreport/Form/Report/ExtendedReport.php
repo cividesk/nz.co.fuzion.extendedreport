@@ -1907,6 +1907,16 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
                 }
               }
             }
+            elseif ($columnName == 'civicrm_contribution_financial_type_id') {
+              $columnId = $amount;
+              $FinancialTypeResult = civicrm_api3('FinancialType', 'get', [
+                'sequential' => 1,
+                'id' => $columnId,
+              ]);
+              if (!empty($FinancialTypeResult['id'])) {
+                $rows[$key][$columnName] = $FinancialTypeResult['values'][0]['name'];
+              }
+            }
           }
         }
         if (!empty($rows) && !empty($endNew)) {
@@ -1920,13 +1930,8 @@ class CRM_Extendedreport_Form_Report_ExtendedReport extends CRM_Report_Form {
           $this->_statFields = array_keys($new);
           if (!empty($new)) {
             $firstHeaderKey = array_keys($this->_columnHeaders)[0];
-            $lastHeaderKey = key(array_slice($this->_columnHeaders, -1, 1, true));
             $columnHeaders[$firstHeaderKey] = $this->_columnHeaders[$firstHeaderKey];
-            unset($new[$lastHeaderKey]);
-            foreach ($new as $hName => $value) {
-              $columnHeaders[$hName] = $this->_columnHeaders[$hName];
-            }
-            $columnHeaders[$lastHeaderKey] = $this->_columnHeaders[$lastHeaderKey];
+            $columnHeaders += array_intersect_key($this->_columnHeaders, $new);
             $this->_columnHeaders = $columnHeaders;
           }
         }
