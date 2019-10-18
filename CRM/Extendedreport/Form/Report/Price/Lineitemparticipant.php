@@ -49,7 +49,7 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
       'civicrm_note' => array(
         'dao' => 'CRM_Core_DAO_Note',
         'fields' => array(
-          'note' => array('title' => ts('Note')),
+          'note' => array('title' => ts('Participant Note')),
         ),
       ),
     ) +
