@@ -45,7 +45,7 @@ class CRM_Extendedreport_Form_Report_Price_Lineitemparticipant extends CRM_Exten
     $this->getColumns('LineItem') +
     $this->getColumns('Address') +
     $this->getColumns('Membership') +
-    $this->getColumns('Note') + array(
+    array(
       'civicrm_note' => array(
         'dao' => 'CRM_Core_DAO_Note',
         'fields' => array(
