@@ -4276,6 +4276,7 @@ WHERE cg.extends IN ('" . implode("','", $extends) . "') AND
             'title' => ts('Current Membership Cycle End Date'),
             'include_null' => TRUE,
             'is_group_bys' => TRUE,
+            'is_filters' => TRUE,
             'type' => CRM_Utils_Type::T_DATE,
             'operatorType' => CRM_Report_Form::OP_DATE,
           ),
